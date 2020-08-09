@@ -281,24 +281,24 @@ base64decode PROC source:DWORD, destination:DWORD, sourcelen:DWORD
 
 	;-------------[decoding part]--------------- 
 
-	 : 
+	@@outer_loop: 
 	push ecx 
 	mov ecx, 4 
 	xor ebx, ebx 
 	lodsd 
-	 : 
+	@@inner_loop: 
 		push eax 
 		and eax, 0ffh
 		mov al, byte ptr [offset base64table+eax]
 		cmp al, 255
-		je  
+		je @@invalid_char
 		shl ebx, 6 
 		or bl, al
-		[color=#BF8040][b]@@skip[/b][/color] :
+		@@skip:
 		pop eax 
 		shr eax, 8 
 		dec ecx 
-		jnz  
+		jnz @@inner_loop
 	mov eax, ebx 
 	shl eax, 8 
 	xchg ah, al 
@@ -308,15 +308,15 @@ base64decode PROC source:DWORD, destination:DWORD, sourcelen:DWORD
 	dec edi 
 	pop ecx 
 	dec ecx 
-	jnz   
+	jnz @@outer_loop 
 	xor eax, eax 
-	jmp   
+	jmp @@decode_done 
 
 	;------------------------------------------- 
 
-	 : 
+	@@invalid_char: 
 	mov eax, -1 
-	 : 
+	@@decode_done: 
 	pop ebx 
 	pop edi 
 	pop esi 
@@ -341,7 +341,7 @@ base64encode PROC source:DWORD, destination:DWORD, sourcelen:DWORD
 	mov esi, source 
 	mov edi, destination
 
-	 : 
+	@@base64loop: 
 	xor eax, eax
 	.if sourcelen == 1
 		lodsb	;source ptr + 1 
@@ -377,7 +377,7 @@ base64encode PROC source:DWORD, destination:DWORD, sourcelen:DWORD
 	jnz @B	;loop 
 
 	cmp sourcelen, 0 
-	jnz  	;main loop 
+	jnz @@base64loop	;main loop 
 
 	mov eax, edx	;add padding and null terminate 
 	stosd	; " " " " " 
@@ -391,4 +391,3 @@ base64encode endp
 
 
 end start
-
